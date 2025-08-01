@@ -139,6 +139,20 @@ def print_heuristic_grid(goal, N=8):
         print(f"{i:2d}| " + " ".join(row))
     print()
 
+
+def print_path_costs_and_heuristics(path, goal):
+    """
+    Prints both the actual cost (g(n)) and heuristic (h(n)) values for each cell along the found path.
+    """
+    print("Actual cost (g) and heuristic (h) values along the path:")
+    for idx, cell in enumerate(path):
+        g = idx  # Each step costs exactly 1
+        h = heuristic(cell, goal)
+        f = g + h
+        print(f"  {cell}: g={g}, h={h}, f={f}")
+    print()
+
+
 def print_path_heuristics(path, goal):
     """
     Prints the heuristic value for each cell along the found path.
@@ -188,7 +202,7 @@ def main():
         print("Path found:")
         print(path)
         if path:
-            print_path_heuristics(path, goal)
+            print_path_costs_and_heuristics(path, goal)
         plot_map(grid, path, title=title, start=start, goal=goal)
 
 if __name__ == "__main__":
