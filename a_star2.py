@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import heapq
 import io
 import sys
-import time
+import time 
 
 N = 8  # Size of the grid (N x N)
 DIRS = [(-1,0),(1,0),(0,-1),(0,1)]  # 4-way movement directions: 
@@ -11,16 +11,30 @@ DIRS = [(-1,0),(1,0),(0,-1),(0,1)]  # 4-way movement directions:
 
 def raw_map(prob_block=0.0, start=None, goal=None):
     """
-    Generates a random N x N grid with given probability of obstacles,
-    and guarantees that the start and goal positions are open, as well as 
-    at least one open neighbor each.
-    Obstacles are represented as 1, open spaces as 0.
+    Generate a random N x N grid for pathfinding with obstacles.
+
+    Each cell is independently set to either open (0) or blocked (1), based on 
+    prob_block.
+    Ensures start and goal positions are open, and each has at least one open 
+    neighbor (to avoid dead-ends).
+
+    Parameters:
+        prob_block (float): Probability that each cell (except start/goal) is 
+                            an obstacle (blocked).
+        start (tuple): (row, col) index for start position (guaranteed open).
+        goal (tuple): (row, col) index for goal position (guaranteed open).
+
     Returns:
-        grid: 2D numpy array of shape (N, N) with obstacles and open spaces.
+        grid (np.ndarray): 2D array of shape (N, N), with 0=open and 1=obstacle.
     """
     if start is None or goal is None:
         raise ValueError("start and goal must be specified")
+    
+    # Randomly assign 0 (open) or 1 (blocked) for each cell
     grid = np.random.choice([0, 1], size=(N, N), p=[1-prob_block, prob_block])
+
+    # Guarantee that start and goal cells are open, never blocked
+    # Decrease the chance to have no completed path
     grid[start[0], start[1]] = 0
     grid[goal[0], goal[1]] = 0
 
@@ -30,8 +44,9 @@ def raw_map(prob_block=0.0, start=None, goal=None):
         nx, ny = start[0]+dx, start[1]+dy
         if 0 <= nx < N and 0 <= ny < N:
             start_neighbors.append((nx, ny))
-    np.random.shuffle(start_neighbors)
+    np.random.shuffle(start_neighbors)  # Randomize neighbor order
     neighbor_opened = any(grid[nx, ny] == 0 for nx, ny in start_neighbors)
+     # If no open neighbor, forcibly open the first neighbor
     if not neighbor_opened and start_neighbors:
         nx, ny = start_neighbors[0]
         grid[nx, ny] = 0
@@ -52,10 +67,15 @@ def raw_map(prob_block=0.0, start=None, goal=None):
 
 def heuristic(a, b):
     """
-    Compute the Manhattan distance heuristic between two points a and b.
-    a, b: Tuples of (row, col)
+    Compute the Manhattan distance between two cells.
+
+    Used as the A* heuristic: h(n) = |x1-x2| + |y1-y2|
+
+    Parameters:
+        a, b (tuple): Cells as (row, col)
+
     Returns:
-        Manhattan distance: |x1-x2| + |y1-y2|
+        int: Manhattan distance between a and b
     """
     return abs(a[0]-b[0]) + abs(a[1]-b[1])
 
@@ -98,7 +118,7 @@ def a_star(grid, start, goal, return_costs=False, return_expanded=False,
             - visit_order: list of (row, col) tuples showing the order of node 
                            expansions (if return_visited=True).
 
-    Explicit Optimization Notes:
+    Optimization Notes:
         - Includes a heuristic-based tie-breaking method: prioritizing nodes 
           with lower heuristic values (closer to the goal) when nodes have 
           identical f(n) values.
@@ -110,14 +130,10 @@ def a_star(grid, start, goal, return_costs=False, return_expanded=False,
         - Average-case: O(N logN) -> Improved 
                         (Previous: O(N logN) < O(Avg case) < O(N^2 logN))
         - Worst-case: O(N^2 logN)
-
-    Example:
-        path, costs, expanded, visited = a_star(grid, start, goal,
-                                                return_costs=True,
-                                                return_expanded=True,
-                                                return_visited=True)
     """
+    # open_set: priority queue of nodes to explore; each entry is
     open_set = []
+    # closed_set: set of already-expanded nodes to avoid re-exploration
     closed_set = set()
     
     # Dictionary tracking the lowest cost (g) for each node
@@ -237,7 +253,7 @@ def plot_map_with_costs(grid, costs, path=None, title="", start=None, goal=None,
     plt.yticks(np.arange(grid.shape[0]))
     plt.grid(True, color='lightgray')
 
-    # Plot expanded/visited nodes as yellow squares (no numbers)
+    # Plot expanded/visited nodes as yellow squares
     if visited:
         vx, vy = zip(*visited)
         plt.scatter(vy, vx, c='orange', s=90, marker='s', alpha=0.5, 
@@ -282,6 +298,15 @@ def print_path_costs_and_heuristics(path, goal, algo='astar'):
     along the found path.
     For Dijkstra, h is always 0, f = g.
     For A*, h is Manhattan distance, f = g + h.
+
+    Parameters:
+        path: list of tuple
+              List of (row, col) tuples along the found path.
+        goal: tuple
+              (row, col) tuple, the goal cell (for heuristic computation).
+
+    Returns:
+        None
     """
     print("Actual cost (g) and heuristic (h) values along the path:")
     for idx, cell in enumerate(path):
@@ -298,6 +323,13 @@ def print_grid_stats(grid):
       - Total number of cells
       - Number and percentage of obstacles
       - Number and percentage of free cells
+
+    Parameters:
+        grid: np.ndarray
+              2D grid of the map (0=open, 1=obstacle).
+
+    Returns:
+        None    
     """
     total = grid.size
     obstacles = np.sum(grid == 1)
@@ -311,13 +343,33 @@ def print_grid_stats(grid):
 
 def create_map(prob_block=0.0, max_attempts=1000, start=None, goal=None):
     """
-    Generates a random map and guarantees that there is a valid path between 
-    start and goal.
-    Tries up to max_attempts times; raises an error if no solvable map is found.
+    Generate a random map with a valid path from start to goal.
+
+    - Tries up to max_attempts times to produce a map where a valid path exists.
+    - Uses A* to check for solvability.
+    - If no path is found after all attempts, raises an error.
+
+    Parameters:
+        prob_block: float
+                    Probability that a given cell is an obstacle.
+        start: tuple
+               (row, col) position for the start node.
+        goal: tuple
+              (row, col) position for the goal node.
+        max_attempts: int, optional
+                      Maximum number of attempts to generate a solvable map.
+
     Returns:
-        grid: 2D numpy array
-        path: List of (row, col) tuples representing the solution path
-        costs: Dictionary of expanded cells and their (g, h, f)
+        grid: np.ndarray
+              2D grid with 0=open, 1=obstacle.
+        path: list of tuple
+              The shortest path from start to goal, if found.
+        costs: dict
+               Expanded cells and their (g, h, f) values.
+
+    Raises:
+        RuntimeError
+            If no solvable map is found after max_attempts.
     """
     if start is None or goal is None:
         raise ValueError("start and goal must be specified")
@@ -344,7 +396,7 @@ def main():
     All output is saved to a .txt file for each case.
     """
     # np.random.seed(42) # For reproducibility: Remove the comment sign (#)
-                         # then every run will generate a new random map.  
+
     start = (0, 0)
     goal = (7, 7)
     probs = [0.0, 0.2, 0.5]
