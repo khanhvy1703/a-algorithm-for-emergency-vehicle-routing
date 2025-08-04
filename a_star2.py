@@ -515,55 +515,63 @@ Inputs: Grid of size N * N (0=open cell, 1=blocked cell)
 Outputs: Optimal path from start to goal if one exists, else null.
 
 
-function AStar(grid, start, goal):
-    # openSet stores nodes to be expanded, prioritized by lowest (f, h)
-    openSet := empty min-heap priority queue  
-    openSet.insert(start, priority = heuristic(start, goal))
+Algorithm AStar(grid, start, goal)
+    // Initialize priority queue with start node; prioritize by estimated total cost (f)
+    openSet := empty min-heap priority queue
+    openSet.insert((f=heuristic(start, goal), h=heuristic(start, goal), g=0, node=start, path=[start]))
 
-    gScore[start] := 0                               # Cost from start to current node
-    fScore[start] := heuristic(start, goal)          # Estimated total cost (g + h)
+    // Track the lowest actual cost to reach each node
+    gScore[start] := 0
 
-    parent := empty map                              # Tracks optimal path predecessors
-    closedSet := empty set                           # Tracks nodes already expanded
+    // Store nodes already explored to avoid redundant processing
+    closedSet := empty set
 
-    while openSet is not empty:
+    // Continue exploring while nodes remain in the open set
+    while openSet is not empty do
+        // Extract node with the lowest estimated total cost
+        (current_f, current_h, current_g, current_node, current_path) := openSet.pop_lowest_priority()
 
-        current := openSet.pop_lowest_priority()     # Get node with lowest (f, h)
+        // Check if the goal has been reached
+        if current_node = goal then
+            return current_path  // Return the path from start to goal
 
-        if current = goal:                           # Goal reached, reconstruct path
-            path := empty list
-            while current in parent:
-                path.prepend(current)
-                current := parent[current]
-            path.prepend(current)                    # Include start node
-            return path                              # Optimal path found
+        // Skip nodes that have already been expanded
+        if current_node in closedSet then
+            continue
 
-        closedSet.add(current)                       # Mark node as expanded
+        // Mark the current node as expanded
+        closedSet.add(current_node)
 
-        for each neighbor of current:
-            if neighbor out of bounds or grid[neighbor] = blocked:
-                continue                             # Skip invalid or blocked cells
+        // Explore all possible neighboring nodes
+        for each direction in DIRECTIONS do
+            neighbor := current_node + direction
 
-            if neighbor in closedSet:
-                continue                             # Skip already expanded nodes
+            // Skip invalid neighbors (out of bounds or blocked)
+            if neighbor out of bounds or grid[neighbor] = blocked then
+                continue
 
-            tentative_g := gScore[current] + 1       # Uniform cost per step
+            // Compute cost of reaching the neighbor through the current node
+            tentative_g := current_g + 1
 
-            # If neighbor is new or we found a better path, update its cost
-            if neighbor not in gScore or tentative_g < gScore[neighbor]:
-                parent[neighbor] := current
-                gScore[neighbor] := tentative_g
-                fScore[neighbor] := tentative_g + heuristic(neighbor, goal)
+            // Skip neighbor if no improvement in cost is found
+            if neighbor in gScore and tentative_g ≥ gScore[neighbor] then
+                continue
 
-                # Insert neighbor into priority queue:
-                # Prioritize by lowest fScore, then heuristic tie-breaking (h)
-                openSet.insert_or_update(neighbor, 
-                    priority = (fScore[neighbor], heuristic(neighbor, goal)))
+            // Update best-known cost to reach neighbor
+            gScore[neighbor] := tentative_g
+            neighbor_h := heuristic(neighbor, goal)  // Estimate remaining cost to goal
+            neighbor_f := tentative_g + neighbor_h   // Calculate estimated total cost
 
-    return null  # No path exists from start to goal
+            // Insert neighbor into priority queue for future exploration
+            openSet.insert((f=neighbor_f, h=neighbor_h, g=tentative_g,
+                            node=neighbor, path=current_path + [neighbor]))
+
+    // No valid path found
+    return null
+
 
     
-# Heuristic (Manhattan distance): estimates distance from current node to goal
+// Heuristic (Manhattan distance): estimates distance from current node to goal
 function heuristic(node, goal):
     return |node.x - goal.x| + |node.y - goal.y|
 
@@ -579,77 +587,70 @@ Inputs: Grid of size N * N (0=open cell, 1=blocked cell)
 Outputs: Optimal path from start to goal if one exists, else null.
 
 
-function A_star_tie_breaking(grid G, start, goal):
-    # Initialize data structures
-    open_set := empty priority queue
-    closed_set := empty set
-    g_score := map with default value infinite
-    parent := empty map for reconstructing optimal path
+Algorithm A_Star(grid, start, goal)
+    // Initialize sets to manage exploration
+    Initialize open_set as an empty priority queue
+    Initialize closed_set as an empty set
 
+    // Set initial cost for start node
     g_score[start] := 0
-    f_score_start := heuristic(start, goal)
+    costs[start] := (0, heuristic(start, goal), heuristic(start, goal))
 
-    # Priority queue prioritized by (f_score, heuristic)
-    open_set.push((f_score_start, f_score_start, start))
+    // Initialize tracking variables
+    visit_order := empty list
+    expanded_nodes_count := 0
 
-    while open_set is not empty:
-        # Extract node with lowest (f_score, heuristic)
-        (current_f, current_h, current) := open_set.pop_min()
+    // Compute heuristic for start node and add to open set
+    h_start := heuristic(start, goal)
+    open_set.insert((f=h_start, h=h_start, g=0, node=start, path=[start]))
 
-        # Check if goal reached
-        if current = goal:
-            return reconstruct_path(parent, current)
+    while open_set is not empty do
+        // Extract node with the lowest cost estimate (f)
+        (current_f, current_h, current_g, current_node, current_path) := open_set.extract_min()
 
-        closed_set.add(current)                    # Mark current node as expanded
+        // Goal check: return path if goal reached
+        if current_node = goal then
+            return current_path with optional(costs, expanded_nodes_count, visit_order)
 
-        # Explore neighbors (up, down, left, right)
-        for each neighbor in neighbors(current, G):
-            if neighbor in closed_set:
-                continue                           # Skip already expanded nodes
+        // Skip already evaluated nodes
+        if current_node ∈ closed_set then
+            continue
 
-            tentative_g := g_score[current] + 1    # Cost between adjacent nodes is 1
+        // Mark current node as explored
+        closed_set.add(current_node)
+        visit_order.append(current_node)
+        expanded_nodes_count := expanded_nodes_count + 1
 
-            if tentative_g < g_score[neighbor]:
-                # Found better path to neighbor
-                parent[neighbor] := current
-                g_score[neighbor] := tentative_g
-                neighbor_h := heuristic(neighbor, goal)
-                neighbor_f := tentative_g + neighbor_h
+        // Explore neighbors of current node
+        for each direction in DIRECTIONS do
+            neighbor := current_node + direction
 
-                # Insert neighbor with tie-breaking by heuristic
-                open_set.push((neighbor_f, neighbor_h, neighbor))
+            // Skip invalid neighbors (out of bounds or blocked)
+            if neighbor is out of grid bounds or grid[neighbor] is blocked then
+                continue
 
-    # Goal not reachable
-    return "No Path"
+            tentative_g := current_g + 1
 
+            // Skip if neighbor already has a better path
+            if neighbor ∈ g_score and tentative_g ≥ g_score[neighbor] then
+                continue
 
-# Function reconstructing the path from goal to start
-function reconstruct_path(parent, current):
-    path := empty list
-    while current in parent:
-        path.prepend(current)
-        current := parent[current]
-    path.prepend(current)                         # Include start node
-    return path
+            // Update neighbor's cost information
+            g_score[neighbor] := tentative_g
+            neighbor_h := heuristic(neighbor, goal)
+            neighbor_f := tentative_g + neighbor_h
 
+            costs[neighbor] := (tentative_g, neighbor_h, neighbor_f)
 
-# Function returning valid neighbors within grid bounds and open cells
-function neighbors(node, G):
-    valid_neighbors := empty list
-    directions := [(0,1), (1,0), (-1,0), (0,-1)]  # 4-directional moves
+            // Add neighbor to the open set
+            open_set.insert((f=neighbor_f, h=neighbor_h, g=tentative_g,
+                           node=neighbor, path=current_path + [neighbor]))
 
-    for each direction in directions:
-        neighbor_x := node.x + direction.x
-        neighbor_y := node.y + direction.y
-
-        # Check bounds and obstacles
-        if (0 ≤ neighbor_x < N) and (0 ≤ neighbor_y < N) and (G[neighbor_x][neighbor_y] = 0):
-            valid_neighbors.add((neighbor_x, neighbor_y))
-
-    return valid_neighbors
+    // No path found: return None with optional details
+    return None with optional(costs, expanded_nodes_count, visit_order)
 
 
-# Heuristic (Manhattan distance): estimates distance from current node to goal
+// Heuristic (Manhattan distance): estimates distance from current node to goal
 function heuristic(node, goal):
     return |node.x - goal.x| + |node.y - goal.y|
 
