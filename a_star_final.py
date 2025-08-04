@@ -729,7 +729,7 @@ This reduces unnecessary node expansions significantly.
 
 Time Complexity (N = Side length of the grid (number of rows/columns)):
 Best-case: O(N logN)
-Average-case: O(N^2 logN)
+Average-case: <= O(N^2 logN)
 Worst-case: O(N^2 logN)
 
 Spcae Complexity: O(N^2) <- Improved from previous version (Path in queue)
