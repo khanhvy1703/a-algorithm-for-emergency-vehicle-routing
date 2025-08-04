@@ -450,3 +450,62 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+'''
+==================================  Pseudocode  ==================================
+
+
+function AStar(grid, start, goal):
+
+    # Heuristic (Manhattan distance): estimates distance from current node to goal
+    function heuristic(node, goal):
+        return |node.x - goal.x| + |node.y - goal.y|
+
+    # openSet stores nodes to be expanded, prioritized by lowest (f, h)
+    openSet := empty min-heap priority queue  
+    openSet.insert(start, priority = heuristic(start, goal))
+
+    gScore[start] := 0                               # Cost from start to current node
+    fScore[start] := heuristic(start, goal)          # Estimated total cost (g + h)
+
+    cameFrom := empty map                            # Tracks optimal path predecessors
+    closedSet := empty set                           # Tracks nodes already expanded
+
+    while openSet is not empty:
+
+        current := openSet.pop_lowest_priority()     # Get node with lowest (f, h)
+
+        if current = goal:                          # Goal reached, reconstruct path
+            path := empty list
+            while current in cameFrom:
+                path.prepend(current)
+                current := cameFrom[current]
+            path.prepend(current)                   # Include start node
+            return path                             # Optimal path found
+
+        closedSet.add(current)                      # Mark node as expanded
+
+        for each neighbor of current:
+            if neighbor out of bounds or grid[neighbor] = blocked:
+                continue                            # Skip invalid or blocked cells
+
+            if neighbor in closedSet:
+                continue                            # Skip already expanded nodes
+
+            tentative_g := gScore[current] + 1       # Uniform cost per step
+
+            # If neighbor is new or we found a better path, update its cost
+            if neighbor not in gScore or tentative_g < gScore[neighbor]:
+                cameFrom[neighbor] := current
+                gScore[neighbor] := tentative_g
+                fScore[neighbor] := tentative_g + heuristic(neighbor, goal)
+
+                # Insert neighbor into priority queue:
+                # Prioritize by lowest fScore, then heuristic tie-breaking (h)
+                openSet.insert_or_update(neighbor, 
+                    priority = (fScore[neighbor], heuristic(neighbor, goal)))
+
+    return null  # No path exists from start to goal
+
+'''
