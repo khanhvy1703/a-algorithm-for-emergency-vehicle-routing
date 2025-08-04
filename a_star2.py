@@ -453,15 +453,17 @@ if __name__ == "__main__":
 
 
 '''
-==================================  Pseudocode  ==================================
+==============================================================================================
+                                    Pseudocode 1 (Concise)
+==============================================================================================  
+Inputs: Grid of size N * N (0=open cell, 1=blocked cell)
+        Start node (start)
+        Goal node (goal)
+
+Outputs: Optimal path from start to goal if one exists, else null.
 
 
 function AStar(grid, start, goal):
-
-    # Heuristic (Manhattan distance): estimates distance from current node to goal
-    function heuristic(node, goal):
-        return |node.x - goal.x| + |node.y - goal.y|
-
     # openSet stores nodes to be expanded, prioritized by lowest (f, h)
     openSet := empty min-heap priority queue  
     openSet.insert(start, priority = heuristic(start, goal))
@@ -469,35 +471,35 @@ function AStar(grid, start, goal):
     gScore[start] := 0                               # Cost from start to current node
     fScore[start] := heuristic(start, goal)          # Estimated total cost (g + h)
 
-    cameFrom := empty map                            # Tracks optimal path predecessors
+    parent := empty map                              # Tracks optimal path predecessors
     closedSet := empty set                           # Tracks nodes already expanded
 
     while openSet is not empty:
 
         current := openSet.pop_lowest_priority()     # Get node with lowest (f, h)
 
-        if current = goal:                          # Goal reached, reconstruct path
+        if current = goal:                           # Goal reached, reconstruct path
             path := empty list
-            while current in cameFrom:
+            while current in parent:
                 path.prepend(current)
-                current := cameFrom[current]
-            path.prepend(current)                   # Include start node
-            return path                             # Optimal path found
+                current := parent[current]
+            path.prepend(current)                    # Include start node
+            return path                              # Optimal path found
 
-        closedSet.add(current)                      # Mark node as expanded
+        closedSet.add(current)                       # Mark node as expanded
 
         for each neighbor of current:
             if neighbor out of bounds or grid[neighbor] = blocked:
-                continue                            # Skip invalid or blocked cells
+                continue                             # Skip invalid or blocked cells
 
             if neighbor in closedSet:
-                continue                            # Skip already expanded nodes
+                continue                             # Skip already expanded nodes
 
             tentative_g := gScore[current] + 1       # Uniform cost per step
 
             # If neighbor is new or we found a better path, update its cost
             if neighbor not in gScore or tentative_g < gScore[neighbor]:
-                cameFrom[neighbor] := current
+                parent[neighbor] := current
                 gScore[neighbor] := tentative_g
                 fScore[neighbor] := tentative_g + heuristic(neighbor, goal)
 
@@ -507,5 +509,116 @@ function AStar(grid, start, goal):
                     priority = (fScore[neighbor], heuristic(neighbor, goal)))
 
     return null  # No path exists from start to goal
+
+    
+# Heuristic (Manhattan distance): estimates distance from current node to goal
+function heuristic(node, goal):
+    return |node.x - goal.x| + |node.y - goal.y|
+
+
+===============================================================================================
+                                    Pseudocode 2 (Detailed)
+===============================================================================================  
+
+Inputs: Grid of size N * N (0=open cell, 1=blocked cell)
+        Start node (start)
+        Goal node (goal)
+
+Outputs: Optimal path from start to goal if one exists, else null.
+
+
+function A_star_tie_breaking(grid G, start, goal):
+    # Initialize data structures
+    open_set := empty priority queue
+    closed_set := empty set
+    g_score := map with default value infinite
+    parent := empty map for reconstructing optimal path
+
+    g_score[start] := 0
+    f_score_start := heuristic(start, goal)
+
+    # Priority queue prioritized by (f_score, heuristic)
+    open_set.push((f_score_start, f_score_start, start))
+
+    while open_set is not empty:
+        # Extract node with lowest (f_score, heuristic)
+        (current_f, current_h, current) := open_set.pop_min()
+
+        # Check if goal reached
+        if current = goal:
+            return reconstruct_path(parent, current)
+
+        closed_set.add(current)                    # Mark current node as expanded
+
+        # Explore neighbors (up, down, left, right)
+        for each neighbor in neighbors(current, G):
+            if neighbor in closed_set:
+                continue                           # Skip already expanded nodes
+
+            tentative_g := g_score[current] + 1    # Cost between adjacent nodes is 1
+
+            if tentative_g < g_score[neighbor]:
+                # Found better path to neighbor
+                parent[neighbor] := current
+                g_score[neighbor] := tentative_g
+                neighbor_h := heuristic(neighbor, goal)
+                neighbor_f := tentative_g + neighbor_h
+
+                # Insert neighbor with tie-breaking by heuristic
+                open_set.push((neighbor_f, neighbor_h, neighbor))
+
+    # Goal not reachable
+    return "No Path"
+
+
+# Function reconstructing the path from goal to start
+function reconstruct_path(parent, current):
+    path := empty list
+    while current in parent:
+        path.prepend(current)
+        current := parent[current]
+    path.prepend(current)                         # Include start node
+    return path
+
+
+# Function returning valid neighbors within grid bounds and open cells
+function neighbors(node, G):
+    valid_neighbors := empty list
+    directions := [(0,1), (1,0), (-1,0), (0,-1)]  # 4-directional moves
+
+    for each direction in directions:
+        neighbor_x := node.x + direction.x
+        neighbor_y := node.y + direction.y
+
+        # Check bounds and obstacles
+        if (0 ≤ neighbor_x < N) and (0 ≤ neighbor_y < N) and (G[neighbor_x][neighbor_y] = 0):
+            valid_neighbors.add((neighbor_x, neighbor_y))
+
+    return valid_neighbors
+
+
+# Heuristic (Manhattan distance): estimates distance from current node to goal
+function heuristic(node, goal):
+    return |node.x - goal.x| + |node.y - goal.y|
+
+
+****************************************** [ Note ] *******************************************
+
+1. Priority Queue Ordering and Tie-breaking:
+Nodes are prioritized based on their estimated total cost f(n) = g(n) + h(n). 
+When nodes have identical f(n) values, tie-breaking is performed using 
+the heuristic value h(n), preferring nodes closer to the goal. 
+This reduces unnecessary node expansions significantly.
+
+2. Data Structures:
+- openSet: Implemented as a min-heap priority queue, 
+           extracting the minimal priority element in O(log N) time.
+- closedSet: Tracks already expanded nodes, ensuring each node is expanded 
+             at most once, for computational efficiency.
+
+Complexity:
+Best-case: O(N logN)
+Average-case (tie-breaking heuristic): Improved to O(N logN)
+Worst-case: O(N^2 logN)
 
 '''
