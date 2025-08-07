@@ -139,11 +139,9 @@ This algorithm prioritizes cells that appear closest to the goal, making it fast
 ```
 emergency_routing_project/
 ├── scripts/
-│   └── main.py              # Main application file
-├── src/                     # Core algorithm implementations
-├── docs/                    # Additional documentation
-├── assets/                  # Images and resources
-├── tests/                   # Unit tests
+│   └── main.py              # Main application (all code in one file)
+├── docs/                    # Documentation
+├── original_analysis/       # Original team A* implementation
 ├── requirements.txt         # Python dependencies
 └── README.md               # This file
 ```
