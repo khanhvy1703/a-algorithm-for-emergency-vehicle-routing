@@ -79,31 +79,6 @@ Original had basic test cases. We added:
 - **Dramatic demonstrations**: Greedy failing by 54x in mazes
 - **Real-time metrics**: Search time, path cost, coverage
 
-## Code Evolution
-
-### Original Team Code (≈300 lines)
-```python
-# Simple A* with basic grid
-class AStar:
-    def __init__(self, grid):
-        self.grid = grid
-    
-    def search(self, start, goal):
-        # Basic A* implementation
-```
-
-### Our Enhanced System (≈3,000 lines)
-```python
-# Comprehensive system with multiple algorithms
-class PathfindingAlgorithm(ABC):
-    # Base class for all algorithms
-    
-class InteractiveRoutingSystem:
-    # Full interactive application
-    # Mouse controls, real-time updates
-    # 22 scenarios, 14 road types
-```
-
 ## Summary
 
 We took the solid foundation of the A* implementation from our teammates and transformed it into a comprehensive, interactive emergency vehicle routing system. The original code provided:

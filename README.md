@@ -139,23 +139,13 @@ This algorithm prioritizes cells that appear closest to the goal, making it fast
 ```
 emergency_routing_project/
 ├── scripts/
-│   ├── main.py              # Main application file
-│   └── __pycache__/          # Python cache files
-├── src/
-│   ├── algorithms.py         # Pathfinding algorithm implementations
-│   ├── city_grid.py         # Grid and road type management
-│   ├── emergency_vehicle.py # Vehicle simulation logic
-│   └── visualization.py     # Rendering and display functions
-├── demos/                    # Traffic simulation demonstrations
-│   ├── advanced_traffic_demo.py
-│   ├── perfect_traffic_demo.py
-│   ├── realistic_traffic_demo.py
-│   └── traffic_simulation_demo.py
-├── docs/                     # Additional documentation
-├── assets/                   # Images and resources
-├── tests/                    # Unit tests
-├── requirements.txt          # Python dependencies
-└── README.md                # This file
+│   └── main.py              # Main application file
+├── src/                     # Core algorithm implementations
+├── docs/                    # Additional documentation
+├── assets/                  # Images and resources
+├── tests/                   # Unit tests
+├── requirements.txt         # Python dependencies
+└── README.md               # This file
 ```
 
 ## Implementation Details

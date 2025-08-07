@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """
 Emergency Vehicle Routing System
-Developed for Advanced Algorithms Course Project
 
-This system simulates emergency vehicle routing through urban environments,
-comparing three pathfinding algorithms: A*, Dijkstra's, and Greedy Best-First Search.
-The interactive interface allows real-time map editing and algorithm comparison.
+Compares three pathfinding algorithms (A*, Dijkstra, Greedy) for emergency vehicle
+routing through different road conditions.
 """
 
-# Standard library imports
 import heapq
 import time
 import math
@@ -19,81 +16,57 @@ from dataclasses import dataclass
 from typing import List, Tuple, Dict, Optional, Set
 from collections import defaultdict
 
-# Third-party imports
 import pygame
 import numpy as np
 
-# Initialize Pygame modules for graphics and fonts
 pygame.init()
 pygame.font.init()
 
-# ============================================================================
-# SYSTEM CONFIGURATION
-# ============================================================================
-
+# Configuration settings
 @dataclass
 class Config:
-    """Global configuration parameters for the application.
-    
-    These values control the window size and grid dimensions. The grid size
-    determines how many cells wide/tall the city grid is, while cell size
-    controls the visual size of each cell.
-    """
-    WINDOW_WIDTH = 1600      # Application window width in pixels
-    WINDOW_HEIGHT = 900      # Application window height in pixels
-    DEFAULT_GRID_SIZE = 50   # Default number of cells in grid (50x50)
-    MIN_CELL_SIZE = 8        # Minimum pixel size per grid cell
-    MAX_CELL_SIZE = 40       # Maximum pixel size per grid cell
+    """Window and grid configuration"""
+    WINDOW_WIDTH = 1600      # Window width in pixels
+    WINDOW_HEIGHT = 900      # Window height in pixels
+    DEFAULT_GRID_SIZE = 50   # Grid size (50x50 cells)
+    MIN_CELL_SIZE = 8        # Min cell size when zoomed
+    MAX_CELL_SIZE = 40       # Max cell size when zoomed
 
 class Colors:
-    """Color palette for the entire application.
+    """Color definitions for the UI"""
+    BACKGROUND = (255, 255, 255)  # White background
+    GRID_LINE = (200, 200, 200)   # Gray grid lines
+    TEXT = (0, 0, 0)              # Black text
     
-    Using RGB tuples for consistency. The color scheme is designed for
-    clear visibility and differentiation between different algorithms
-    and road types.
-    """
-    # Basic UI colors
-    BACKGROUND = (255, 255, 255)  # White background for clean look
-    GRID_LINE = (200, 200, 200)   # Subtle gray grid lines
-    TEXT = (0, 0, 0)              # Black text for readability
+    # Path colors for each algorithm
+    PATH_ASTAR = (0, 100, 255)      # Blue
+    PATH_DIJKSTRA = (255, 0, 0)     # Red
+    PATH_GREEDY = (255, 165, 0)     # Orange
     
-    # Algorithm path colors - each algorithm gets a unique color
-    PATH_ASTAR = (0, 100, 255)      # Blue for A* algorithm
-    PATH_DIJKSTRA = (255, 0, 0)     # Red for Dijkstra's algorithm
-    PATH_GREEDY = (255, 165, 0)     # Orange for Greedy algorithm
+    # Exploration colors
+    EXPLORED_ASTAR = (0, 0, 128, 100)
+    EXPLORED_DIJKSTRA = (139, 0, 0, 100)
+    EXPLORED_GREEDY = (0, 100, 0, 255)
     
-    # Exploration visualization colors (shows cells examined during search)
-    EXPLORED_ASTAR = (0, 0, 128, 100)     # Semi-transparent navy
-    EXPLORED_DIJKSTRA = (139, 0, 0, 100)  # Semi-transparent dark red
-    EXPLORED_GREEDY = (0, 100, 0, 255)    # Solid green for visibility
+    # Start and goal markers
+    START = (0, 255, 0)  # Green
+    GOAL = (255, 0, 0)   # Red
     
-    # Special markers
-    START = (0, 255, 0)  # Bright green for start position
-    GOAL = (255, 0, 0)   # Bright red for goal position
-    
-    # User interface colors for buttons and panels
-    BUTTON_NORMAL = (240, 240, 240)        # Default button background
-    BUTTON_HOVER = (220, 220, 250)         # Button color when mouse hovers
-    BUTTON_ACTIVE = (180, 180, 220)        # Button color when clicked
-    BUTTON_TOGGLED = (100, 150, 250)       # Toggle button when ON
-    BUTTON_TOGGLED_HOVER = (120, 170, 255) # Toggle button hover state
-    PANEL_BG = (255, 255, 255)             # Clean white panel backgrounds
-    SELECTED_BORDER = (0, 120, 255)        # Blue border for selected items
-    BUTTON_BORDER = (100, 100, 100)        # Gray button borders
-    BUTTON_DISABLED = (220, 220, 220)      # Disabled button background
-    TEXT_DISABLED = (150, 150, 150)        # Disabled text color
-
-# ============================================================================
-# ROAD TYPE DEFINITIONS
-# ============================================================================
+    # UI colors
+    BUTTON_NORMAL = (240, 240, 240)
+    BUTTON_HOVER = (220, 220, 250)
+    BUTTON_ACTIVE = (180, 180, 220)
+    BUTTON_TOGGLED = (100, 150, 250)
+    BUTTON_TOGGLED_HOVER = (120, 170, 255)
+    PANEL_BG = (255, 255, 255)
+    SELECTED_BORDER = (0, 120, 255)
+    BUTTON_BORDER = (100, 100, 100)
+    BUTTON_DISABLED = (220, 220, 220)
+    TEXT_DISABLED = (150, 150, 150)
 
 class RoadType(Enum):
-    """Different road types that affect routing decisions.
-    
-    Each road type has a cost multiplier that affects how algorithms
-    evaluate paths. Lower values mean faster travel, higher values mean
-    slower or more difficult travel. This simulates real-world conditions
-    that emergency vehicles face.
+    """Different road types with their travel costs.
+    Lower values = faster travel, higher values = slower/harder travel
     """
     NORMAL = 1.0           # Standard city road
     HIGHWAY = 0.8          # Faster travel on highways
@@ -164,17 +137,9 @@ class RoadType(Enum):
         }
         return icon_map.get(self, "")
 
-# ============================================================================
-# EDUCATIONAL MODE - STEP-BY-STEP VISUALIZATION
-# ============================================================================
-
 class EducationalMode:
-    """Controls the step-by-step visualization feature.
-    
-    This class records every step each algorithm takes during pathfinding,
-    allowing users to see exactly how A*, Dijkstra, and Greedy algorithms
-    explore the grid differently. This is crucial for understanding the
-    trade-offs between different pathfinding strategies.
+    """Handles step-by-step visualization of algorithm exploration.
+    Records each step the algorithms take so we can replay them.
     """
     
     def __init__(self):
@@ -346,21 +311,12 @@ class ToggleButton(Button):
             return True
         return False
 
-# ============================================================================
-# CITY GRID SYSTEM
-# ============================================================================
-
 class Direction(Enum):
-    """Represents the four cardinal directions for movement.
-    
-    Each direction stores a tuple (dx, dy) representing the change in
-    x and y coordinates when moving in that direction. This is used for
-    one-way street restrictions and movement calculations.
-    """
-    NORTH = (0, -1)  # Move up (negative y)
-    EAST = (1, 0)    # Move right (positive x)
-    SOUTH = (0, 1)   # Move down (positive y)
-    WEST = (-1, 0)   # Move left (negative x)
+    """Four cardinal directions for movement"""
+    NORTH = (0, -1)  # Up
+    EAST = (1, 0)    # Right
+    SOUTH = (0, 1)   # Down
+    WEST = (-1, 0)   # Left
 
 class CityGrid:
     """Represents the city as a 2D grid of road cells.
@@ -429,16 +385,9 @@ class CityGrid:
                      for _ in range(self.height)]
         self.one_way_streets.clear()
 
-# ============================================================================
-# PATHFINDING ALGORITHM IMPLEMENTATIONS
-# ============================================================================
-
 class PathfindingAlgorithm:
-    """Abstract base class for all pathfinding algorithms.
-    
-    This class provides common functionality like path reconstruction and
-    cost calculation. Each specific algorithm (A*, Dijkstra, Greedy) inherits
-    from this class and implements its own search strategy.
+    """Base class for pathfinding algorithms.
+    Each algorithm (A*, Dijkstra, Greedy) inherits from this.
     """
     
     def __init__(self, grid: CityGrid, name: str):
