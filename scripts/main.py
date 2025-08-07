@@ -210,9 +210,7 @@ class EducationalMode:
             return True
         return False
 
-# ============================================================================
-# UI COMPONENTS
-# ============================================================================
+# UI Components
 
 class Button:
     """Interactive button class"""
@@ -636,9 +634,7 @@ class GreedyBestFirstSearch(PathfindingAlgorithm):
         self.search_time = time.time() - start_time
         return []
 
-# ============================================================================
-# SCENARIO MANAGER (All previous scenarios)
-# ============================================================================
+# Scenario Manager
 
 class ScenarioManager:
     """Manages all predefined scenarios"""
@@ -929,9 +925,7 @@ class ScenarioManager:
         grid.start = (center_x - 5, 15)
         grid.goal = (center_x + 5, 15)
 
-# ============================================================================
-# MAIN INTERACTIVE APPLICATION
-# ============================================================================
+# Main Application
 
 class InteractiveRoutingSystem:
     """Main application with mouse interaction and map editing"""
@@ -3332,9 +3326,7 @@ class InteractiveRoutingSystem:
             
         pygame.quit()
 
-# ============================================================================
-# MAIN
-# ============================================================================
+# Main entry point
 
 def main():
     """Main entry point"""
