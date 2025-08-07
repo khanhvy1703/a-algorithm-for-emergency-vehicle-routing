@@ -1,0 +1,10 @@
+# Emergency Vehicle Routing System - Dependencies
+# Python 3.7+ required
+
+# Core dependencies
+pygame>=2.6.0
+numpy>=1.21.0
+
+# Note: The project primarily uses pygame for graphics and numpy for
+# efficient array operations. Most other functionality relies on
+# Python's standard library (heapq, enum, dataclasses, etc.)
