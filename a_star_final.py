@@ -157,7 +157,7 @@ def a_star(grid, start, goal, return_costs=False, return_expanded=False,
 
     Complexity:
         - Best-case: O(N logN)
-        - Average-case: <= O(N^2 logN))
+        - Average-case: <= O(N^2 logN)
         - Worst-case: O(N^2 logN)
     """
     open_set = []       # priority queue of nodes to explore (frontier nodes)
@@ -283,7 +283,7 @@ def plot_map_with_costs(grid, costs, path=None, title="", start=None, goal=None,
     """
     if start is None or goal is None:
         raise ValueError("start and goal must be specified")
-    plt.figure(figsize=(7,7))
+    plt.figure(figsize=(N,N))
     plt.title(f"{title}\n(g: steps from start, h: heuristic to goal, f: g+h)")
     plt.imshow(grid, cmap='gray_r')
     plt.xticks(np.arange(grid.shape[1]))
